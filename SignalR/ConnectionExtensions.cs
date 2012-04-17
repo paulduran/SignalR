@@ -15,5 +15,16 @@ namespace SignalR
 
             return connection.SendCommand(command);
         }
+
+        public static Task Forget(this IReceivingConnection connection, string serverId)
+        {
+            var command = new SignalCommand
+            {
+                Type = CommandType.ForgetConnection,
+                Value = serverId
+            };
+
+            return connection.SendCommand(command);
+        }
     }
 }

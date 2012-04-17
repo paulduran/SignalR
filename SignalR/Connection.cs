@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SignalR.Infrastructure;
+using SignalR.Transports;
 
 namespace SignalR
 {
@@ -17,6 +18,8 @@ namespace SignalR
         private readonly HashSet<string> _signals;
         private readonly HashSet<string> _groups;
         private readonly ITraceManager _trace;
+        private readonly ITransport _transport;
+        private readonly string _serverId;
         private bool _disconnected;
 
         public Connection(IMessageBus messageBus,
@@ -25,7 +28,9 @@ namespace SignalR
                           string connectionId,
                           IEnumerable<string> signals,
                           IEnumerable<string> groups,
-                          ITraceManager traceManager)
+                          ITraceManager traceManager,
+                          ITransport transport,
+                          string serverId)
         {
             _messageBus = messageBus;
             _serializer = jsonSerializer;
@@ -34,6 +39,8 @@ namespace SignalR
             _signals = new HashSet<string>(signals);
             _groups = new HashSet<string>(groups);
             _trace = traceManager;
+            _transport = transport;
+            _serverId = serverId;
         }
 
         private IEnumerable<string> Signals
@@ -71,7 +78,7 @@ namespace SignalR
         public Task<PersistentResponse> ReceiveAsync(string messageId, CancellationToken timeoutToken)
         {
             _trace.Source.TraceInformation("Connection: Waiting for messages from {0}.", messageId);
-            Debug.WriteLine("Connetion: Waitng for messages from {0}. {1}", messageId, String.Join(", ", Signals));
+            Debug.WriteLine("Connetion: Waiting for messages from {0}. {1}", messageId, String.Join(", ", Signals));
 
             return _messageBus.GetMessages(Signals, messageId, timeoutToken)
                               .Then(result => GetResponse(result));
@@ -123,6 +130,9 @@ namespace SignalR
 
         private void ProcessCommand(SignalCommand command)
         {
+            _trace.Source.TraceInformation("Connection: Processing command {0}", command.Type);
+            Debug.WriteLine("Connection: Processing command {0}", command.Type);
+
             switch (command.Type)
             {
                 case CommandType.AddToGroup:
@@ -133,6 +143,18 @@ namespace SignalR
                     break;
                 case CommandType.Disconnect:
                     _disconnected = true;
+                    break;
+                case CommandType.ForgetConnection:
+                    var serverId = (string)command.Value;                                        
+                    if (!serverId.Equals(_serverId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _transport.Forget();
+                    }
+                    else
+                    {
+                        _trace.Source.TraceInformation("Connection: Server {0} Now owns {1}", serverId, _connectionId);
+                        Debug.WriteLine("Connection: Server {0} Now owns {1}", serverId, _connectionId);
+                    }
                     break;
             }
         }

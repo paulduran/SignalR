@@ -48,7 +48,9 @@ namespace SignalR
                                   connectionId,
                                   new[] { connectionType },
                                   Enumerable.Empty<string>(),
-                                  _resolver.Resolve<ITraceManager>());
+                                  _resolver.Resolve<ITraceManager>(),
+                                  transport: null,
+                                  serverId: _resolver.Resolve<IServerIdManager>().Id);
         }
     }
 }

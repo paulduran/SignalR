@@ -7,6 +7,7 @@ namespace SignalR.Transports
     public interface ITransport
     {
         Func<string, Task> Received { get; set; }
+        Func<Task> TransportConnected { get; set; }
         Func<Task> Connected { get; set; }
         Func<Task> Reconnected { get; set; }
         Func<Task> Disconnected { get; set; }
@@ -14,6 +15,7 @@ namespace SignalR.Transports
         string ConnectionId { get; }
         IEnumerable<string> Groups { get; }
 
+        void Forget();
         Task ProcessRequest(IReceivingConnection connection);
         Task Send(object value);
     }

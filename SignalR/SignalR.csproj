@@ -70,6 +70,7 @@
     <Compile Include="Hubs\Lookup\IHubManager.cs" />
     <Compile Include="IConnectionManager.cs" />
     <Compile Include="Infrastructure\DefaultDependencyResolver.cs" />
+    <Compile Include="Infrastructure\IServerIdManager.cs" />
     <Compile Include="MessageBus\IIdGenerator.cs" />
     <Compile Include="MessageBus\InMemoryMessage.cs" />
     <Compile Include="MessageBus\MessageResult.cs" />

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignalR.Hosting;
+using SignalR.Transports;
 
 namespace SignalR.Hubs
 {
@@ -231,26 +232,26 @@ namespace SignalR.Hubs
             return _transport.Send(hubResult);
         }
 
-        protected override IConnection CreateConnection(string connectionId, IEnumerable<string> groups, IRequest request)
+        protected override IConnection CreateConnection(string connectionId, IEnumerable<string> groups, IRequest request, ITransport transport)
         {
             string data = request.QueryStringOrForm("connectionData");
 
             if (String.IsNullOrEmpty(data))
             {
-                return base.CreateConnection(connectionId, groups, request);
+                return base.CreateConnection(connectionId, groups, request, transport);
             }
 
             var clientHubInfo = JsonConvert.DeserializeObject<IEnumerable<ClientHubInfo>>(data);
 
             if (clientHubInfo == null || !clientHubInfo.Any())
             {
-                return base.CreateConnection(connectionId, groups, request);
+                return base.CreateConnection(connectionId, groups, request, transport);
             }
 
             IEnumerable<string> hubSignals = clientHubInfo.SelectMany(info => GetSignals(info, connectionId))
                                                           .Concat(GetDefaultSignals(connectionId));
 
-            return new Connection(_messageBus, _jsonSerializer, null, connectionId, hubSignals, groups, _trace);
+            return new Connection(_messageBus, _jsonSerializer, null, connectionId, hubSignals, groups, _trace, transport, _serverId);
         }
 
         private IEnumerable<string> GetSignals(ClientHubInfo hubInfo, string connectionId)

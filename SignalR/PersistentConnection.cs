@@ -12,6 +12,7 @@ namespace SignalR
         protected IMessageBus _messageBus;
         protected IJsonSerializer _jsonSerializer;
         protected IConnectionIdFactory _connectionIdFactory;
+        protected string _serverId;
         private ITransportManager _transportManager;
         private bool _initialized;
 
@@ -30,6 +31,7 @@ namespace SignalR
             _jsonSerializer = resolver.Resolve<IJsonSerializer>();
             _transportManager = resolver.Resolve<ITransportManager>();
             _trace = resolver.Resolve<ITraceManager>();
+            _serverId = resolver.Resolve<IServerIdManager>().Id;
 
             _initialized = true;
         }
@@ -83,7 +85,12 @@ namespace SignalR
 
             var groups = new List<string>(_transport.Groups);
 
-            Connection = CreateConnection(connectionId, groups, context.Request);
+            Connection = CreateConnection(connectionId, groups, context.Request, _transport);
+
+            _transport.TransportConnected = () =>
+            {
+                return Connection.Forget(_serverId);
+            };
 
             _transport.Connected = () =>
             {
@@ -110,7 +117,7 @@ namespace SignalR
             return _transport.ProcessRequest(Connection) ?? TaskAsyncHelper.Empty;
         }
 
-        protected virtual IConnection CreateConnection(string connectionId, IEnumerable<string> groups, IRequest request)
+        protected virtual IConnection CreateConnection(string connectionId, IEnumerable<string> groups, IRequest request, ITransport transport)
         {
             return new Connection(_messageBus,
                                   _jsonSerializer,
@@ -118,7 +125,9 @@ namespace SignalR
                                   connectionId,
                                   GetDefaultSignals(connectionId),
                                   groups,
-                                  _trace);
+                                  _trace,
+                                  transport,
+                                  _serverId);
         }
 
         protected IEnumerable<string> GetDefaultSignals(string connectionId)

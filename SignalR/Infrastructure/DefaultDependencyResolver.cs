@@ -9,11 +9,15 @@ namespace SignalR
 {
     public class DefaultDependencyResolver : IDependencyResolver
     {
+        private readonly string _id = Guid.NewGuid().ToString();
         private readonly Dictionary<Type, IList<Func<object>>> _resolvers = new Dictionary<Type, IList<Func<object>>>();
 
         public DefaultDependencyResolver()
         {
             var traceManager = new Lazy<TraceManager>(() => new TraceManager());
+
+            var serverId = new ServerId();
+            Register(typeof(IServerIdManager), () => serverId);
 
             var assemblyLocator = new Lazy<DefaultAssemblyLocator>(() => new DefaultAssemblyLocator());
             Register(typeof(IAssemblyLocator), () => assemblyLocator.Value);
@@ -61,6 +65,11 @@ namespace SignalR
 
             var connectionManager = new Lazy<ConnectionManager>(() => new ConnectionManager(this));
             Register(typeof(IConnectionManager), () => connectionManager.Value);
+        }
+
+        public string Id
+        {
+            get { return _id; }
         }
 
         public virtual object GetService(Type serviceType)
@@ -125,6 +134,16 @@ namespace SignalR
             foreach (var a in activators)
             {
                 list.Add(a);
+            }
+        }
+
+        private class ServerId : IServerIdManager
+        {
+            private readonly string _id = Guid.NewGuid().ToString();
+
+            public string Id
+            {
+                get { return _id; }
             }
         }
     }

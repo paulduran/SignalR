@@ -43,12 +43,17 @@ namespace SignalR.Transports
             }
         }
 
-        private void RemoveConnection(ITrackingConnection connection)
+        public void RemoveConnection(ITrackingConnection connection)
+        {
+            RemoveConnectionCore(connection);
+        }
+        
+        private bool RemoveConnectionCore(ITrackingConnection connection)
         {
             // Remove the connection and associated metadata
             _connections.Remove(connection);
             ConnectionMetadata old;
-            _connectionMetadata.TryRemove(connection, out old);
+            return _connectionMetadata.TryRemove(connection, out old);
         }
 
         public void MarkConnection(ITrackingConnection connection)
@@ -104,10 +109,12 @@ namespace SignalR.Transports
                         try
                         {
                             // Remove the connection from the list
-                            RemoveConnection(connection);
+                            if (RemoveConnectionCore(connection))
+                            {
 
-                            // Fire disconnect on the connection
-                            connection.Disconnect();
+                                // Fire disconnect on the connection
+                                connection.Disconnect();
+                            }
                         }
                         catch
                         {

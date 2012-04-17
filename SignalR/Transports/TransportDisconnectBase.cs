@@ -124,5 +124,11 @@ namespace SignalR.Transports
         {
             get { return _heartBeat; }
         }
+
+        public virtual void Forget()
+        {
+            Debug.WriteLine("TransportDisconnectBase: Forgetting connection {0}", (object)ConnectionId);
+            HeartBeat.RemoveConnection(this);
+        }
     }
 }

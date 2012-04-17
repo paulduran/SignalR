@@ -116,6 +116,8 @@ namespace SignalR.Transports
 
         public Func<Task> Connected { get; set; }
 
+        public Func<Task> TransportConnected { get; set; }
+
         public Func<Task> Reconnected { get; set; }
 
         public override Func<Task> Disconnected { get; set; }
@@ -162,7 +164,7 @@ namespace SignalR.Transports
         public virtual Task Send(object value)
         {
             var payload = _jsonSerializer.Stringify(value);
-            
+
             if (IsJsonp)
             {
                 payload = Json.CreateJsonpCallback(JsonpCallback, payload);
@@ -215,6 +217,11 @@ namespace SignalR.Transports
             var receiveTask = IsConnectRequest ?
                               connection.ReceiveAsync(TimeoutToken) :
                               connection.ReceiveAsync(MessageId, TimeoutToken);
+
+            if (TransportConnected != null)
+            {
+                TransportConnected().Catch();
+            }
 
             if (postReceive != null)
             {
